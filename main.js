@@ -7,9 +7,18 @@ import * as CANNON from 'https://cdn.skypack.dev/cannon-es';
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
+
+const canvasWidth = 500;
+const canvasHeight = 300;
+
+
 const canvasEl = document.querySelector('#canvas');
 const scoreResult = document.querySelector('#score-result');
 const rollBtn = document.querySelector('#roll-btn');
+
+
+canvasEl.width = canvasWidth;
+canvasEl.height = canvasHeight;
 
 canvasEl.addEventListener('mousedown', onMouseDown, false);
 canvasEl.addEventListener('mousemove', onMouseMove, false);
@@ -19,7 +28,10 @@ canvasEl.addEventListener('mouseup', onMouseUp, false);
 
 let renderer, scene, camera, diceMesh, innerMesh, outerMesh, physicsWorld, rayLine;
 
+let diceIdArray = [];
+
 const params = {
+    diceScale: 2,
     numberOfDice: 2,
     segments: 40,
     edgeRadius: .07,
@@ -29,13 +41,13 @@ const params = {
 
 
 
-const floorWidth = 13;
+const floorWidth = 15;
 const floorHeight = 9;
 const floorDistance = -7;
 const wallHeight = 10;
 const wallThickness = 0.00001;
 
-const diceScale = 1;
+// const diceScale = 1;
 const diceArray = [];
 
 // camera
@@ -92,14 +104,18 @@ function initScene() {
 
 
     diceMesh = createDiceMesh();
-    console.log(diceMesh)
+    // console.log(diceMesh)
     for (let i = 0; i < params.numberOfDice; i++) {
         let die = createDice();
         diceArray.push(die);
-        scene.add(diceArray[i].mesh);
+        let children = die.mesh.children;
+        let childrenIds = [];
+        children.forEach((c) => childrenIds.push(c.uuid));
+        diceIdArray.push(childrenIds);
         addDiceEvents(die);
     }
 
+    console.log(diceIdArray);
     rayLine = new THREE.Line();
     scene.add(rayLine);
 
@@ -141,17 +157,10 @@ function createFloor() {
 
 function createWall(width, height, depth, position, rotation) {
 
-    const wallMaterial = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        roughness: 0.5,
-        metalness: 0.1,
-        opacity: 1, // Set opacity to 0
-        transparent: true // Enable transparency
-    });
-
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshBasicMaterial({
-        // color: 0xCCCCCC,
+        color: 0xCCCCCC,
+        roughness: 0,
         opacity: 0, // Set opacity to 0
         transparent: true
     });
@@ -211,14 +220,14 @@ function createWalls() {
 
 function createDiceMesh() {
     const boxMaterialOuter = new THREE.MeshStandardMaterial({
-        color: 0xD77777,
-        // roughness: 0.5,
+        color: 0x0ffffff,
+        roughness: 0,
         // metalness: 0.5
     })
     const boxMaterialInner = new THREE.MeshStandardMaterial({
-        color: 0x000000,
-        roughness: 0,
-        metalness: 1,
+        color: 0xD77777,
+        roughness: 1,
+        metalness: 0,
         side: THREE.DoubleSide
     })
 
@@ -237,12 +246,12 @@ function createDice() {
     // const inner = innerMesh.clone();
     // const outer = outerMesh.clone();
 
-    mesh.scale.set(diceScale, diceScale, diceScale); // Scale the mesh
+    mesh.scale.set(params.diceScale, params.diceScale, params.diceScale); // Scale the mesh
     scene.add(mesh);
 
     const body = new CANNON.Body({
         mass: 1,
-        shape: new CANNON.Box(new CANNON.Vec3(0.5 * diceScale, 0.5 * diceScale, 0.5 * diceScale)), // Scale the physics shape
+        shape: new CANNON.Box(new CANNON.Vec3(0.5 * params.diceScale, 0.5 * params.diceScale, 0.5 * params.diceScale)), // Scale the physics shape
         sleepTimeLimit: 0.1,
     });
     physicsWorld.addBody(body);
@@ -410,9 +419,9 @@ function render() {
 }
 
 function updateSceneSize() {
-    camera.aspect = 1.5; //floorHeight / floorWidth;
+    camera.aspect = canvasWidth / canvasHeight;
     camera.updateProjectionMatrix();
-    // renderer.setSize(floorWidth * 10, floorHeight * 10);
+    renderer.setSize(canvasWidth, canvasHeight);
 }
 
 function throwDice() {
@@ -440,106 +449,108 @@ function throwDice() {
 }
 
 
-
+var dragStartPos;
 function onMouseDown(event) {
     event.preventDefault();
 
-    mouse.x = (event.clientX / canvasEl.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / canvasEl.clientHeight) * 2 + 1;
+    const canvasRect = canvasEl.getBoundingClientRect();
+    mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+    mouse.y = -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
 
-    // console.log(mouse.x + ";" + mouse.y);
     raycaster.setFromCamera(mouse, camera);
-    // Visualize the ray
-    const rayDir = raycaster.ray.direction.clone().multiplyScalar(50);
-    const rayGeom = new THREE.BufferGeometry().setFromPoints([raycaster.ray.origin, raycaster.ray.origin.clone().add(rayDir)]);
-    const rayMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
-    const rayLine = new THREE.Line(rayGeom, rayMat);
-    scene.add(rayLine);
 
     const intersects = raycaster.intersectObjects(diceArray.map(dice => dice.mesh));
-    console.log(diceArray)
-    console.log(intersects)
+    const intersect = intersects[0];
+    // console.log(intersects)
+
+    let clickedDiceIndex;
     for (let i = 0; i < intersects.length; i++) {
-        console.log(intersects[i].object)
+        // let obj = intersects[i].object;
+        let id = intersects[i].object.uuid;
+
+        for (let j = 0; j < diceIdArray.length; j++) {
+            let childIds = diceIdArray[j];
+
+            for (let k = 0; k < childIds.length; k++) {
+                if (id === childIds[k]) {
+                    draggedDice = diceArray[j];
+                    clickedDiceIndex = j;
+                    console.log(j);
+                    break;
+                }
+            }
+        }
     }
 
-    // if (intersects.length > 0) {
-    //     const intersect = intersects[0];
-    //     const topLevelMesh = getTopLevelMesh(intersect.object);
-
-    //     console.log('diceArray:', diceArray);
-    //     console.log('intersect.object:', intersect.object);
-    //     console.log('topLevelMesh:', topLevelMesh);
-
-    //     draggedDice = diceArray.find(dice => dice.mesh === topLevelMesh);
-    //     console.log('draggedDice:', draggedDice);
-
-    //     // draggedDice = diceArray.find(dice => dice.mesh === intersect.object);
-    //     for (let i = 0; i < diceArray.length; i++) {
-    //         if (diceArray[i].mesh === intersect.object) {
-    //             draggedDice = diceArray[i];
-    //             break;
-    //         }
-    //     }
-    //     dragOffset.copy(intersect.point).sub(draggedDice.mesh.position);
-    //     scene.add(draggedDice.mesh);
+    // make clicked dice move
+    // const force = 3 + 5 * Math.random();
+    // diceArray[clickedDiceIndex].body.applyImpulse(
+    //     new CANNON.Vec3(-force * 4, force * 0.5, 0),
+    //     new CANNON.Vec3(0, 0, .2)
+    // );
+    draggedDice.body.allowSleep = false;
+    console.log(draggedDice);
+    // dragOffset.copy(intersect.point).sub(draggedDice.mesh.position);
+    // scene.add(draggedDice.mesh);
     // }
 }
+
+var prevPos = new THREE.Vector3();
+var target;
+var dragDirection;
+const prevPositions = [];
+const bufferSize = 5;
 
 function onMouseMove(event) {
     event.preventDefault();
 
     if (draggedDice !== null) {
-        mouse.x = (event.clientX / canvasEl.clientWidth) * 2 - 1;
-        mouse.y = -(event.clientY / canvasEl.clientHeight) * 2 + 1;
 
-        raycaster.setFromCamera(mouse, camera);
-        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -7);
-        const target = new THREE.Vector3();
-        raycaster.ray.intersectPlane(plane, target);
-        target.sub(dragOffset);
+        const canvasRect = canvasEl.getBoundingClientRect();
+        mouse.x = ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1;
+        mouse.y = -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1;
+
+        target = new THREE.Vector3();
+        target.x = mouse.x;
+        target.y = mouse.y;
+        target.z = 0.89;
+        target.unproject(camera);
 
         draggedDice.mesh.position.copy(target);
-        draggedDice.body.position.copy(target);
+        draggedDice.body.position.set(target.x, target.y, target.z);
+        draggedDice.body.velocity.set(0, 0, 0);
+        draggedDice.body.angularVelocity.set(0, 0, 0);
+        // draggedDice.body.wakeUp();
+
+        // Calculate dragDirection by averaging the previous positions
+        if (prevPositions.length >= bufferSize) {
+            prevPositions.shift();
+        }
+        prevPositions.push(target.clone());
+
+        dragDirection = new THREE.Vector3();
+        for (let i = 0; i < prevPositions.length - 1; i++) {
+            const diff = prevPositions[i + 1].clone().sub(prevPositions[i]);
+            dragDirection.add(diff);
+        }
+        dragDirection.divideScalar(prevPositions.length - 1).normalize();
+
+        // console.log(dragDirection);
     }
 }
+
 
 function onMouseUp(event) {
     event.preventDefault();
-    console.log('draggedDice:', draggedDice);
+    console.log('rollin');
 
     if (draggedDice !== null) {
-        const force = new THREE.Vector3(0, 10, 0); // Adjust this vector to control the force applied to the dice
-        draggedDice.body.applyLocalForce(new CANNON.Vec3(force.x, force.y, force.z), new CANNON.Vec3(0, 0, 0));
-        draggedDice.body.angularVelocity.set(Math.random() * 5, Math.random() * 5, Math.random() * 5);
+        const forceMagnitude = 30;
+        const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, dragDirection.y * forceMagnitude, dragDirection.z * forceMagnitude);
+        draggedDice.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
+        draggedDice.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
 
+        draggedDice.body.allowSleep = true;
         draggedDice = null;
     }
 }
-
-function getTopLevelMesh(object) {
-    let topLevelMesh = object;
-    while (topLevelMesh.parent) {
-        topLevelMesh = topLevelMesh.parent;
-    }
-    return topLevelMesh;
-}
-// function onMouseDown(event) {
-//     event.preventDefault();
-
-//     mouse.x = (event.clientX / canvasEl.clientWidth) * 2 - 1;
-//     mouse.y = -(event.clientY / canvasEl.clientHeight) * 2 + 1;
-
-//     raycaster.setFromCamera(mouse, camera);
-
-//     // Visualize the ray
-//     const rayDir = raycaster.ray.direction.clone().multiplyScalar(50);
-//     const rayGeom = new THREE.BufferGeometry().setFromPoints([raycaster.ray.origin, raycaster.ray.origin.clone().add(rayDir)]);
-//     rayLine.geometry = rayGeom;
-
-//     const intersects = raycaster.intersectObjects(diceArray.map(dice => dice.mesh));
-
-//     console.log('intersects:', intersects);
-
-//     // Rest of the onMouseDown function...
-// }
