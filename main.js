@@ -29,10 +29,12 @@ canvasEl.addEventListener('mouseup', onMouseUp, false);
 let renderer, scene, camera, diceMesh, innerMesh, outerMesh, physicsWorld, rayLine;
 
 let diceIdArray = [];
+const activeConstraints = [];
+
 
 const params = {
-    diceScale: 2,
-    numberOfDice: 2,
+    numberOfDice: 3,
+    diceScale: 1.5,
     segments: 40,
     edgeRadius: .07,
     notchRadius: .12,
@@ -44,7 +46,7 @@ const params = {
 const floorWidth = 15;
 const floorHeight = 9;
 const floorDistance = -7;
-const wallHeight = 10;
+const wallHeight = 1000;
 const wallThickness = 0.00001;
 
 // const diceScale = 1;
@@ -407,6 +409,9 @@ function showRollResults(score) {
 }
 
 function render() {
+    // Attract neighboring dice towards the dragged dice
+    attractNeighbors();
+
     physicsWorld.fixedStep();
 
     for (const dice of diceArray) {
@@ -448,8 +453,39 @@ function throwDice() {
     });
 }
 
+function attractNeighbors() {
+    if (draggedDice === null) {
+        return;
+    }
 
-var dragStartPos;
+    const constraintDistance = 3;
+    const attractionForce = -20; // Adjust this value to control the attraction force
+    const maxDistance = 100; // Adjust this value to control the pick-up distance
+
+    diceArray.forEach((otherDice, index) => {
+        if (otherDice !== draggedDice) {
+            const distance = draggedDice.mesh.position.distanceTo(otherDice.mesh.position);
+            if (distance <= maxDistance) {
+                const forceDirection = draggedDice.mesh.position.clone().sub(otherDice.mesh.position).normalize();
+                const force = new CANNON.Vec3(forceDirection.x * attractionForce, forceDirection.y * attractionForce, forceDirection.z * attractionForce);
+                otherDice.body.applyForce(force, otherDice.body.position);
+
+                // Create constraints between the dice when they are close enough
+                if (distance <= constraintDistance) {
+                    const existingConstraint = activeConstraints.find(constraint => (constraint.bodyA === draggedDice.body && constraint.bodyB === otherDice.body) || (constraint.bodyA === otherDice.body && constraint.bodyB === draggedDice.body));
+
+                    if (!existingConstraint) {
+                        const constraint = new CANNON.LockConstraint(draggedDice.body, otherDice.body, { collideConnected: false });
+                        physicsWorld.addConstraint(constraint);
+                        activeConstraints.push(constraint);
+                    }
+                }
+            }
+        }
+    });
+}
+
+
 function onMouseDown(event) {
     event.preventDefault();
 
@@ -513,7 +549,7 @@ function onMouseMove(event) {
         target = new THREE.Vector3();
         target.x = mouse.x;
         target.y = mouse.y;
-        target.z = 0.89;
+        target.z = 0.90;
         target.unproject(camera);
 
         draggedDice.mesh.position.copy(target);
@@ -534,8 +570,6 @@ function onMouseMove(event) {
             dragDirection.add(diff);
         }
         dragDirection.divideScalar(prevPositions.length - 1).normalize();
-
-        // console.log(dragDirection);
     }
 }
 
@@ -545,12 +579,24 @@ function onMouseUp(event) {
     console.log('rollin');
 
     if (draggedDice !== null) {
+        // Remove the constraints
+        activeConstraints.forEach(constraint => {
+            physicsWorld.removeConstraint(constraint);
+        });
+        activeConstraints.length = 0;
         const forceMagnitude = 30;
-        const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, dragDirection.y * forceMagnitude, dragDirection.z * forceMagnitude);
-        draggedDice.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
-        draggedDice.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
+        const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, 10, dragDirection.z * forceMagnitude);
+        
+        diceArray.forEach((d) => {
+            d.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
+            d.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
+    
+        });
+        // draggedDice.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
+        // draggedDice.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
 
         draggedDice.body.allowSleep = true;
         draggedDice = null;
+
     }
 }
