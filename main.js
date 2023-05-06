@@ -23,6 +23,9 @@ canvasEl.height = canvasHeight;
 canvasEl.addEventListener('mousedown', onMouseDown, false);
 canvasEl.addEventListener('mousemove', onMouseMove, false);
 canvasEl.addEventListener('mouseup', onMouseUp, false);
+canvasEl.addEventListener('touchstart', onTouchStart, false);
+canvasEl.addEventListener('touchmove', onTouchMove, false);
+canvasEl.addEventListener('touchend', onTouchEnd, false);
 
 
 
@@ -33,8 +36,8 @@ const activeConstraints = [];
 
 
 const params = {
-    numberOfDice: 3,
-    diceScale: 1.5,
+    numberOfDice: 2,
+    diceScale: 2,
     segments: 40,
     edgeRadius: .07,
     notchRadius: .12,
@@ -599,4 +602,33 @@ function onMouseUp(event) {
         draggedDice = null;
 
     }
+}
+
+
+
+function onTouchStart(event) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    const simulatedMouseEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+    };
+    onMouseDown(simulatedMouseEvent);
+}
+
+function onTouchMove(event) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    const simulatedMouseEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+    };
+    onMouseMove(simulatedMouseEvent);
+}
+
+function onTouchEnd(event) {
+    event.preventDefault();
+    onMouseUp(event);
 }
