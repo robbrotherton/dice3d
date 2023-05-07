@@ -76,7 +76,7 @@ const overlay = d3.select(".content").append("canvas").attr("id", "overlay")
 
 overlay
     // .style("background-color", "plum")
-    .style("border", "2px solid #999")
+    .style("border", "2px solid #D77")
     .style("border-radius", "5px")
     .style("position", "absolute")
     .style("left", (canvasWidth * 0.05) + "px")
@@ -437,6 +437,8 @@ function render() {
 }
 
 function updateSceneSize() {
+    // var availableWidth = window.visualViewport.width;
+    // document.body.style.width // scale using Math.min(...)
     camera.aspect = canvasWidth / canvasHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(canvasWidth, canvasHeight);
