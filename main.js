@@ -70,7 +70,7 @@ initPhysics();
 initScene();
 
 window.addEventListener('resize', updateSceneSize);
-window.addEventListener('dblclic/k', throwDice);
+window.addEventListener('dblclick', throwDice);
 rollBtn.addEventListener('click', throwDice);
 
 function initScene() {
@@ -109,7 +109,7 @@ function initScene() {
 
 
     diceMesh = createDiceMesh();
-    // console.log(diceMesh)
+    
     for (let i = 0; i < params.numberOfDice; i++) {
         let die = createDice();
         diceArray.push(die);
@@ -120,9 +120,6 @@ function initScene() {
         addDiceEvents(die);
     }
 
-    console.log(diceIdArray);
-    rayLine = new THREE.Line();
-    scene.add(rayLine);
 
     throwDice();
 
@@ -132,7 +129,7 @@ function initScene() {
 function initPhysics() {
     physicsWorld = new CANNON.World({
         allowSleep: true,
-        gravity: new CANNON.Vec3(0, -50, 0),
+        gravity: new CANNON.Vec3(0, -55, 0),
     })
     physicsWorld.defaultContactMaterial.restitution = .3;
 }
@@ -170,6 +167,7 @@ function createWall(width, height, depth, position, rotation) {
         transparent: true
     });
     const wall = new THREE.Mesh(geometry, material);
+    
     wall.position.copy(position);
     wall.rotation.copy(rotation);
     scene.add(wall);
