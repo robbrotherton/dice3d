@@ -29,7 +29,7 @@ canvasEl.addEventListener('touchend', onTouchEnd, false);
 
 
 
-let renderer, scene, camera, diceMesh, innerMesh, outerMesh, physicsWorld, rayLine;
+let renderer, scene, camera, physicsWorld, rayLine;
 
 let diceIdArray = [];
 const activeConstraints = [];
@@ -37,14 +37,21 @@ const activeConstraints = [];
 
 const params = {
     numberOfDice: 2,
-    diceScale: 2,
+    diceScale: 1.8,
     segments: 40,
     edgeRadius: .07,
     notchRadius: .12,
     notchDepth: .1,
 };
 
-
+const colorPal = [
+    "#D77",
+    "#7799DD", 
+    "#77BA81",
+    "#D1D177",
+    "#AA77DD",
+    "#999"
+];
 
 const floorWidth = 15;
 const floorHeight = 9;
@@ -69,7 +76,7 @@ const overlay = d3.select(".content").append("canvas").attr("id", "overlay")
 
 overlay
     // .style("background-color", "plum")
-    .style("border", "2px solid #D77")
+    .style("border", "2px solid #999")
     .style("border-radius", "5px")
     .style("position", "absolute")
     .style("left", (canvasWidth * 0.05) + "px")
@@ -121,10 +128,12 @@ function initScene() {
 
 
 
-    diceMesh = createDiceMesh();
-    
+    const diceMesh = createDiceMesh();
+
     for (let i = 0; i < params.numberOfDice; i++) {
-        let die = createDice();
+
+        const color = colorPal[i % colorPal.length];
+        let die = createDice(diceMesh, color);
         diceArray.push(die);
         let children = die.mesh.children;
         let childrenIds = [];
@@ -133,7 +142,10 @@ function initScene() {
         addDiceEvents(die);
     }
 
+    console.log(diceArray[1].mesh.children[0].material.color)
 
+    // diceArray[0].mesh.children[0].material.color.copy({r: 1, g: 0, b: 0})
+    // diceArray[1].mesh.children[0].material.color.copy({r: 0, g: 0, b: 1})
     throwDice();
 
     render();
@@ -150,7 +162,7 @@ function initPhysics() {
 
 function createFloor() {
     const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(floorWidth, floorHeight),
+        new THREE.PlaneGeometry(1000, 1000),
         new THREE.ShadowMaterial({
             opacity: 0.05,
         })
@@ -202,16 +214,16 @@ function createWalls() {
     const d = floorHeight;
 
     const wallPositions = [
-      { w: w, h: h, d: d, position: new THREE.Vector3(-floorWidth / 2 - wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Left wall
-      { w: w, h: h, d: d, position: new THREE.Vector3(floorWidth / 2 + wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Right wall
-      { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, -floorHeight / 2 - wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Bottom wall
-      { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, floorHeight / 2 + wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Top wall
+        { w: w, h: h, d: d, position: new THREE.Vector3(-floorWidth / 2 - wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Left wall
+        { w: w, h: h, d: d, position: new THREE.Vector3(floorWidth / 2 + wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Right wall
+        { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, -floorHeight / 2 - wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Bottom wall
+        { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, floorHeight / 2 + wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Top wall
     ];
-  
+
     wallPositions.forEach(wall => {
-      createWall(wall.w, wall.h, wall.d, wall.position, wall.rotation);
+        createWall(wall.w, wall.h, wall.d, wall.position, wall.rotation);
     });
-  }
+}
 
 
 function createDiceMesh() {
@@ -237,10 +249,17 @@ function createDiceMesh() {
     return diceMesh;
 }
 
-function createDice() {
+function createDice(diceMesh, innerColor) {
     const mesh = diceMesh.clone();
     // const inner = innerMesh.clone();
     // const outer = outerMesh.clone();
+
+    mesh.children[0].material = new THREE.MeshStandardMaterial({
+        color: innerColor,
+        roughness: 1,
+        metalness: 0,
+        side: THREE.DoubleSide,
+    });
 
     mesh.scale.set(params.diceScale, params.diceScale, params.diceScale); // Scale the mesh
     scene.add(mesh);
@@ -452,7 +471,7 @@ function attractNeighbors() {
         return;
     }
 
-    const constraintDistance = 3;
+    const constraintDistance = params.diceScale * 2;
     const attractionForce = -20; // Adjust this value to control the attraction force
     const maxDistance = 100; // Adjust this value to control the pick-up distance
 
@@ -580,13 +599,13 @@ function onMouseUp(event) {
         activeConstraints.length = 0;
         const forceMagnitude = 30;
         const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, 10, dragDirection.z * forceMagnitude);
-        
+
         diceArray.forEach((d) => {
             d.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
             d.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
-    
+
         });
-        
+
         draggedDice.body.allowSleep = true;
         draggedDice = null;
 
@@ -601,7 +620,7 @@ function onTouchStart(event) {
     const simulatedMouseEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
-        preventDefault: () => {},
+        preventDefault: () => { },
     };
     onMouseDown(simulatedMouseEvent);
 }
@@ -612,7 +631,7 @@ function onTouchMove(event) {
     const simulatedMouseEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
-        preventDefault: () => {},
+        preventDefault: () => { },
     };
     onMouseMove(simulatedMouseEvent);
 }
