@@ -65,6 +65,19 @@ let draggedDice = null;
 let dragOffset = new THREE.Vector3();
 
 
+const overlay = d3.select(".content").append("canvas").attr("id", "overlay")
+
+overlay
+    // .style("background-color", "plum")
+    .style("border", "2px solid #D77")
+    .style("border-radius", "5px")
+    .style("position", "absolute")
+    .style("left", (canvasWidth * 0.05) + "px")
+    .style("top", (canvasHeight * 0.05) + "px")
+    .attr("width", canvasWidth * 0.9)
+    .attr("height", canvasHeight * 0.9)
+    .style("z-index", -1)
+
 
 initPhysics();
 initScene();
@@ -167,7 +180,7 @@ function createWall(width, height, depth, position, rotation) {
         transparent: true
     });
     const wall = new THREE.Mesh(geometry, material);
-    
+
     wall.position.copy(position);
     wall.rotation.copy(rotation);
     scene.add(wall);
@@ -184,42 +197,22 @@ function createWall(width, height, depth, position, rotation) {
 }
 
 function createWalls() {
-    // Left wall
-    createWall(
-        wallThickness,
-        wallHeight,
-        floorHeight,
-        new THREE.Vector3(-floorWidth / 2 - wallThickness / 2, floorDistance + wallHeight / 2, 0),
-        new THREE.Euler(0, 0, 0)
-    );
+    const w = wallThickness;
+    const h = wallHeight;
+    const d = floorHeight;
 
-    // Right wall
-    createWall(
-        wallThickness,
-        wallHeight,
-        floorHeight,
-        new THREE.Vector3(floorWidth / 2 + wallThickness / 2, floorDistance + wallHeight / 2, 0),
-        new THREE.Euler(0, 0, 0)
-    );
+    const wallPositions = [
+      { w: w, h: h, d: d, position: new THREE.Vector3(-floorWidth / 2 - wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Left wall
+      { w: w, h: h, d: d, position: new THREE.Vector3(floorWidth / 2 + wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Right wall
+      { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, -floorHeight / 2 - wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Bottom wall
+      { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, floorHeight / 2 + wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Top wall
+    ];
+  
+    wallPositions.forEach(wall => {
+      createWall(wall.w, wall.h, wall.d, wall.position, wall.rotation);
+    });
+  }
 
-    // Bottom wall
-    createWall(
-        floorWidth,
-        wallHeight,
-        wallThickness,
-        new THREE.Vector3(0, floorDistance + wallHeight / 2, -floorHeight / 2 - wallThickness / 2),
-        new THREE.Euler(0, 0, 0)
-    );
-
-    // Top wall
-    createWall(
-        floorWidth,
-        wallHeight,
-        wallThickness,
-        new THREE.Vector3(0, floorDistance + wallHeight / 2, floorHeight / 2 + wallThickness / 2),
-        new THREE.Euler(0, 0, 0)
-    );
-}
 
 function createDiceMesh() {
     const boxMaterialOuter = new THREE.MeshStandardMaterial({
@@ -520,9 +513,9 @@ function onMouseDown(event) {
     }
 
     // make clicked dice move
-    // const force = 3 + 5 * Math.random();
+    // const force0 = 3 + 5 * Math.random();
     // diceArray[clickedDiceIndex].body.applyImpulse(
-    //     new CANNON.Vec3(-force * 4, force * 0.5, 0),
+    //     new CANNON.Vec3(-force0 * 4, force0 * 0.5, 0),
     //     new CANNON.Vec3(0, 0, .2)
     // );
     draggedDice.body.allowSleep = false;
@@ -593,9 +586,7 @@ function onMouseUp(event) {
             d.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
     
         });
-        // draggedDice.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
-        // draggedDice.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
-
+        
         draggedDice.body.allowSleep = true;
         draggedDice = null;
 

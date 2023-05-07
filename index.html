@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" class="no-js">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Three.js Dice Roller | Codrops</title>
-	</head>
-	<body>
-		<main>
 
-			<div class="content"style="width: 500px; margin: 0 auto;">
-				<canvas id="canvas" style="border: 2px solid #D77; border-radius: 5px;"></canvas>
-				<div class="ui-controls">
-					<div class="score">Score: <span id="score-result"></span></div>
-					<button id="roll-btn">Throw the dice</button>
-				</div>
-			</div>
-		</main>
-		<script type="importmap">
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.min.js"></script>
+	<meta charset="UTF-8" />
+	<title>Three.js Dice Roller | Codrops</title>
+</head>
+
+<body>
+	<!-- <main> -->
+
+	<div>
+		<div class="content" style="width: 500px; height: 300px; margin: 0 auto; position: relative;">
+			<canvas id="canvas" style="position: absolute;"></canvas>
+			<!-- border: 2px solid #D77; border-radius: 5px;  -->
+		</div>
+	</div>
+
+	<div class="ui-controls">
+		<div class="score">Score: <span id="score-result"></span></div>
+		<button id="roll-btn">Throw the dice</button>
+	</div>
+	<!-- </main> -->
+	<script type="importmap">
 		  {
 			"imports": {
 			  "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
@@ -23,6 +30,7 @@
 			}
 		  }
 		</script>
-		<script type="module" src="main.js"></script>
-	</body>
+	<script type="module" src="main.js"></script>
+</body>
+
 </html>
