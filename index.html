@@ -9,7 +9,7 @@
 </head>
 
 <body>
-	
+
 	<div>
 		<div class="content" style="width: 500px; height: 300px; position: relative;">
 			<canvas id="canvas" style="position: absolute;"></canvas>
@@ -19,9 +19,18 @@
 		<div class="ui-controls">
 			<div class="score">Score: <span id="score-result"></span></div>
 			<button id="roll-btn">Throw the dice</button>
+			<label for="cars">Number of dice:</label>
+
+			<select name="nDice" id="nDice">
+				<option value="1">1</option>
+				<option value="2" selected="true">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5</option>
+			</select>
 		</div>
 	</div>
-	
+
 	<script type="importmap">
 			{
 			"imports": {
