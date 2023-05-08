@@ -46,7 +46,7 @@ const params = {
 
 const colorPal = [
     "#D77",
-    "#7799DD", 
+    "#7799DD",
     "#77BA81",
     "#D1D177",
     "#AA77DD",
@@ -187,7 +187,8 @@ function createWall(width, height, depth, position, rotation) {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshBasicMaterial({
         color: 0xCCCCCC,
-        roughness: 0,
+        // roughness: 0,
+        // friction: 0.1,
         opacity: 0, // Set opacity to 0
         transparent: true
     });
@@ -229,12 +230,12 @@ function createWalls() {
 function createDiceMesh() {
     const boxMaterialOuter = new THREE.MeshStandardMaterial({
         color: 0x0ffffff,
-        roughness: 0,
+        // roughness: 0,
         // metalness: 0.5
     })
     const boxMaterialInner = new THREE.MeshStandardMaterial({
         color: 0xD77777,
-        roughness: 1,
+        // roughness: 1,
         metalness: 0,
         side: THREE.DoubleSide
     })
@@ -256,7 +257,7 @@ function createDice(diceMesh, innerColor) {
 
     mesh.children[0].material = new THREE.MeshStandardMaterial({
         color: innerColor,
-        roughness: 1,
+        // roughness: 1,
         metalness: 0,
         side: THREE.DoubleSide,
     });
@@ -421,7 +422,16 @@ function showRollResults(score) {
     }
 }
 
+var target = new THREE.Vector3();
+
 function render() {
+
+    if (draggedDice !== null) {
+        draggedDice.body.position.set(target.x, target.y, target.z);
+        draggedDice.body.velocity.set(0, 0, 0);
+        draggedDice.body.angularVelocity.set(0, 0, 0);
+    }
+
     // Attract neighboring dice towards the dragged dice
     attractNeighbors();
 
@@ -500,6 +510,14 @@ function attractNeighbors() {
     });
 }
 
+function nudgeDice(d) {
+    const force0 = 2 + 2 * Math.random();
+    d.body.applyImpulse(
+        new CANNON.Vec3(-force0 * 4, force0 * 0.5, 0),
+        new CANNON.Vec3(0, 0, .2)
+    );
+}
+
 
 function onMouseDown(event) {
     event.preventDefault();
@@ -510,44 +528,59 @@ function onMouseDown(event) {
 
     raycaster.setFromCamera(mouse, camera);
 
+    target = new THREE.Vector3();
+    target.x = mouse.x;
+    target.y = mouse.y;
+    target.z = 0.90;
+    target.unproject(camera);
+
     const intersects = raycaster.intersectObjects(diceArray.map(dice => dice.mesh));
-    const intersect = intersects[0];
-    // console.log(intersects)
 
-    let clickedDiceIndex;
-    for (let i = 0; i < intersects.length; i++) {
-        // let obj = intersects[i].object;
-        let id = intersects[i].object.uuid;
+    if (intersects.length > 0) {
+        for (let i = 0; i < intersects.length; i++) {
+            // let obj = intersects[i].object;
+            let id = intersects[i].object.uuid;
 
-        for (let j = 0; j < diceIdArray.length; j++) {
-            let childIds = diceIdArray[j];
+            for (let j = 0; j < diceIdArray.length; j++) {
+                let childIds = diceIdArray[j];
 
-            for (let k = 0; k < childIds.length; k++) {
-                if (id === childIds[k]) {
-                    draggedDice = diceArray[j];
-                    clickedDiceIndex = j;
-                    console.log(j);
-                    break;
+                for (let k = 0; k < childIds.length; k++) {
+                    if (id === childIds[k]) {
+                        draggedDice = diceArray[j];
+                        // clickedDiceIndex = j;
+                        console.log(j);
+                        break;
+                    }
                 }
             }
         }
+        draggedDice.body.allowSleep = false;
+    } else {
+        // if no dice was clicked, bump the table a bit
+        var forceX = 2 + Math.random() * 2;
+        var forceY = 2 + Math.random() * 2;
+        const dirX = 1 - Math.random() * 2;
+        const dirY = 1 - Math.random() * 2;
+        // force = force * dir;
+        // console.log(dir);
+
+        diceArray.forEach((d) => {
+            d.body.applyImpulse(
+                new CANNON.Vec3(2, 2, 2),
+                new CANNON.Vec3(1, 1, 0.5)
+            );
+        })
     }
 
-    // make clicked dice move
-    // const force0 = 3 + 5 * Math.random();
-    // diceArray[clickedDiceIndex].body.applyImpulse(
-    //     new CANNON.Vec3(-force0 * 4, force0 * 0.5, 0),
-    //     new CANNON.Vec3(0, 0, .2)
-    // );
-    draggedDice.body.allowSleep = false;
-    console.log(draggedDice);
+
+
     // dragOffset.copy(intersect.point).sub(draggedDice.mesh.position);
     // scene.add(draggedDice.mesh);
     // }
 }
 
 var prevPos = new THREE.Vector3();
-var target;
+// var target;
 var dragDirection;
 const prevPositions = [];
 const bufferSize = 5;
@@ -567,11 +600,6 @@ function onMouseMove(event) {
         target.z = 0.90;
         target.unproject(camera);
 
-        draggedDice.mesh.position.copy(target);
-        draggedDice.body.position.set(target.x, target.y, target.z);
-        draggedDice.body.velocity.set(0, 0, 0);
-        draggedDice.body.angularVelocity.set(0, 0, 0);
-        // draggedDice.body.wakeUp();
 
         // Calculate dragDirection by averaging the previous positions
         if (prevPositions.length >= bufferSize) {
@@ -594,11 +622,13 @@ function onMouseUp(event) {
     console.log('rollin');
 
     if (draggedDice !== null) {
+
         // Remove the constraints
         activeConstraints.forEach(constraint => {
             physicsWorld.removeConstraint(constraint);
         });
         activeConstraints.length = 0;
+
         const forceMagnitude = 30;
         const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, 10, dragDirection.z * forceMagnitude);
 
@@ -610,7 +640,7 @@ function onMouseUp(event) {
 
         draggedDice.body.allowSleep = true;
         draggedDice = null;
-
+        prevPositions.length = 0;
     }
 }
 
