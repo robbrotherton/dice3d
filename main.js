@@ -126,7 +126,7 @@ function initScene(numberOfDice) {
     const ambientLight = new THREE.AmbientLight(0xffffff, .5);
     scene.add(ambientLight);
     const topLight = new THREE.PointLight(0xffffff, .5);
-    topLight.position.set(10, 15, 0);
+    topLight.position.set(5, 15, 0);
     topLight.castShadow = true;
     topLight.shadow.mapSize.width = 2048;
     topLight.shadow.mapSize.height = 2048;
@@ -560,7 +560,7 @@ function attractNeighbors() {
     }
 
     const constraintDistance = params.diceScale * 2;
-    const attractionForce = -20; // Adjust this value to control the attraction force
+    const attractionForce = 50; // Adjust this value to control the attraction force
     const maxDistance = 100; // Adjust this value to control the pick-up distance
 
     diceArray.forEach((otherDice, index) => {
@@ -607,7 +607,7 @@ function onMouseDown(event) {
     target = new THREE.Vector3();
     target.x = mouse.x;
     target.y = mouse.y;
-    target.z = 0.90;
+    target.z = 0.92;
     target.unproject(camera);
 
     const intersects = raycaster.intersectObjects(diceArray.map(dice => dice.mesh));
@@ -641,8 +641,8 @@ function onMouseDown(event) {
         // console.log(dir);
 
         diceArray.forEach((d) => {
-            const force = 10;
-            d.body.applyLocalImpulse(
+            const force = 3;
+            d.body.applyImpulse(
                 new CANNON.Vec3(force, force, force * 2),
                 new CANNON.Vec3(0, 0, 0)
             );
@@ -674,7 +674,7 @@ function onMouseMove(event) {
         target = new THREE.Vector3();
         target.x = mouse.x;
         target.y = mouse.y;
-        target.z = 0.90;
+        target.z = 0.92;
         target.unproject(camera);
 
 
@@ -706,7 +706,7 @@ function onMouseUp(event) {
         });
         activeConstraints.length = 0;
 
-        const forceMagnitude = 30;
+        const forceMagnitude = 60;
         const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, 10, dragDirection.z * forceMagnitude);
 
         diceArray.forEach((d) => {
