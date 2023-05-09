@@ -15,6 +15,7 @@ const canvasHeight = 300;
 const canvasEl = document.querySelector('#canvas');
 const scoreResult = document.querySelector('#score-result');
 const rollBtn = document.querySelector('#roll-btn');
+const nDiceBtn = document.querySelector('#nDice');
 
 
 canvasEl.width = canvasWidth;
@@ -48,7 +49,7 @@ const colorPal = [
     "#D77",
     "#7799DD",
     "#77BA81",
-    "#D1D177",
+    "#dfdf00",
     "#AA77DD",
     "#999"
 ];
@@ -92,13 +93,19 @@ overlay
 
 
 initPhysics();
-initScene();
+initScene(params.numberOfDice);
 
 window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', throwDice);
 rollBtn.addEventListener('click', throwDice);
+nDiceBtn.addEventListener('change', () => {
+    params.numberOfDice = parseInt(nDiceBtn.value);
+    console.log(params.numberOfDice);
+    resetWorld(parseInt(nDiceBtn.value));
+    throwDice();
+});
 
-function initScene() {
+function initScene(numberOfDice) {
 
     renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -131,11 +138,9 @@ function initScene() {
 
     createContainer(containerWidth, containerHeight, containerDepth);
 
-
-
     const diceMesh = createDiceMesh();
 
-    for (let i = 0; i < params.numberOfDice; i++) {
+    for (let i = 0; i < numberOfDice; i++) {
 
         const color = colorPal[i % colorPal.length];
         let die = createDice(diceMesh, color);
@@ -159,6 +164,30 @@ function initPhysics() {
     physicsWorld.defaultContactMaterial.restitution = .3;
 }
 
+function resetWorld(numberOfDice) {
+    // Remove existing dice from the scene and physics world
+    diceArray.forEach(dice => {
+      scene.remove(dice.mesh);
+      physicsWorld.removeBody(dice.body);
+    });
+  
+    // Clear the arrays
+    diceArray.length = 0;
+    diceIdArray.length = 0;
+  
+    // Initialize new dice
+    const diceMesh = createDiceMesh();
+    for (let i = 0; i < numberOfDice; i++) {
+      const color = colorPal[i % colorPal.length];
+      let die = createDice(diceMesh, color);
+      diceArray.push(die);
+      let children = die.mesh.children;
+      let childrenIds = [];
+      children.forEach((c) => childrenIds.push(c.uuid));
+      diceIdArray.push(childrenIds);
+      addDiceEvents(die);
+    }
+  }
 
 function createFloor() {
     const floor = new THREE.Mesh(
