@@ -37,7 +37,7 @@ const activeConstraints = [];
 
 const params = {
     numberOfDice: 2,
-    diceScale: 1.8,
+    diceScale: 2,
     segments: 40,
     edgeRadius: .07,
     notchRadius: .12,
@@ -56,6 +56,11 @@ const colorPal = [
 const floorWidth = 15;
 const floorHeight = 9;
 const floorDistance = -7;
+
+const containerWidth = 20;
+const containerHeight = 6;
+const containerDepth = 12;
+
 const wallHeight = 1000;
 const wallThickness = 0.00001;
 
@@ -106,7 +111,7 @@ function initScene() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera(40, 15, 0.6, 200);
-    camera.position.set(0, 7, 0);
+    camera.position.set(0, 14, 0);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     updateSceneSize();
@@ -124,7 +129,7 @@ function initScene() {
 
     createFloor();
 
-    createWalls();
+    createContainer(containerWidth, containerHeight, containerDepth);
 
 
 
@@ -141,11 +146,6 @@ function initScene() {
         diceIdArray.push(childrenIds);
         addDiceEvents(die);
     }
-
-    console.log(diceArray[1].mesh.children[0].material.color)
-
-    // diceArray[0].mesh.children[0].material.color.copy({r: 1, g: 0, b: 0})
-    // diceArray[1].mesh.children[0].material.color.copy({r: 0, g: 0, b: 1})
     throwDice();
 
     render();
@@ -168,7 +168,7 @@ function createFloor() {
         })
     );
     floor.receiveShadow = true;
-    floor.position.y = floorDistance;
+    floor.position.y = -containerHeight * 0.5;
     floor.rotation.x = -Math.PI / 2; // Replace the quaternion.setFromAxisAngle() line with this
     scene.add(floor);
 
@@ -180,6 +180,53 @@ function createFloor() {
     floorBody.quaternion.setFromEuler(floor.rotation.x, floor.rotation.y, floor.rotation.z, "XYZ"); // Update this line
     physicsWorld.addBody(floorBody);
 }
+
+function createContainer(width, height, depth) {
+    const halfExtents = new CANNON.Vec3(width / 2, height / 2, depth / 2);
+    const wallMaterial = new THREE.MeshBasicMaterial({ color: "#000000", wireframe: false, opacity: 0, transparent: true });
+  
+    const orientations = [
+      new CANNON.Vec3(1, 0, 0),
+      new CANNON.Vec3(-1, 0, 0),
+      new CANNON.Vec3(0, 1, 0),
+      new CANNON.Vec3(0, -1, 0),
+      new CANNON.Vec3(0, 0, 1),
+      new CANNON.Vec3(0, 0, -1),
+    ];
+  
+    const positions = [
+      new CANNON.Vec3(halfExtents.x, 0, 0),
+      new CANNON.Vec3(-halfExtents.x, 0, 0),
+      new CANNON.Vec3(0, halfExtents.y, 0),
+      new CANNON.Vec3(0, -halfExtents.y, 0),
+      new CANNON.Vec3(0, 0, halfExtents.z),
+      new CANNON.Vec3(0, 0, -halfExtents.z),
+    ];
+  
+    const sizes = [
+      { x: containerDepth, y: containerHeight },
+      { x: containerDepth, y: containerHeight },
+      { x: containerWidth, y: containerDepth },
+      { x: containerWidth, y: containerDepth },
+      { x: containerWidth, y: containerHeight },
+      { x: containerWidth, y: containerHeight }
+    ];
+  
+    for (let i = 0; i < orientations.length; i++) {
+      const planeGeometry = new THREE.PlaneGeometry(sizes[i].x, sizes[i].y);
+      const wall = new THREE.Mesh(planeGeometry, wallMaterial);
+      wall.position.copy(positions[i]);
+      wall.lookAt(scene.position);
+      scene.add(wall);
+  
+      const plane = new CANNON.Plane();
+      const body = new CANNON.Body({ mass: 0 });
+      body.addShape(plane);
+      body.position.copy(wall.position);
+      body.quaternion.copy(wall.quaternion);
+      physicsWorld.addBody(body);
+    }
+  }
 
 
 function createWall(width, height, depth, position, rotation) {
@@ -462,16 +509,16 @@ function throwDice() {
         d.body.velocity.setZero();
         d.body.angularVelocity.setZero();
 
-        d.body.position = new CANNON.Vec3(6, -4 + dIdx * 0.1, 0);
+        d.body.position = new CANNON.Vec3(containerWidth * 0.4, 0, -(params.numberOfDice * 0.5) + (dIdx * 1));
         d.mesh.position.copy(d.body.position);
 
         d.mesh.rotation.set(2 * Math.PI * Math.random(), 0, 2 * Math.PI * Math.random())
         d.body.quaternion.copy(d.mesh.quaternion);
 
-        const force = 3 + 5 * Math.random();
+        const force = 10 + 10 * Math.random();
         d.body.applyImpulse(
             new CANNON.Vec3(-force * 4, force * 0.5, 0),
-            new CANNON.Vec3(0, 0, .2)
+            new CANNON.Vec3(0, 0, 0.2)
         );
 
         d.body.allowSleep = true;
@@ -565,9 +612,10 @@ function onMouseDown(event) {
         // console.log(dir);
 
         diceArray.forEach((d) => {
-            d.body.applyImpulse(
-                new CANNON.Vec3(2, 2, 2),
-                new CANNON.Vec3(1, 1, 0.5)
+            const force = 10;
+            d.body.applyLocalImpulse(
+                new CANNON.Vec3(force, force, force * 2),
+                new CANNON.Vec3(0, 0, 0)
             );
         })
     }
