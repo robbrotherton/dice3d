@@ -3,37 +3,12 @@
 
 
 import * as CANNON from 'https://cdn.skypack.dev/cannon-es';
-
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 
 const canvasWidth = 500;
 const canvasHeight = 300;
-
-
-const canvasEl = document.querySelector('#canvas');
-const scoreResult = document.querySelector('#score-result');
-const rollBtn = document.querySelector('#roll-btn');
-const nDiceBtn = document.querySelector('#nDice');
-
-
-canvasEl.width = canvasWidth;
-canvasEl.height = canvasHeight;
-
-canvasEl.addEventListener('mousedown', onMouseDown, false);
-canvasEl.addEventListener('mousemove', onMouseMove, false);
-canvasEl.addEventListener('mouseup', onMouseUp, false);
-canvasEl.addEventListener('touchstart', onTouchStart, false);
-canvasEl.addEventListener('touchmove', onTouchMove, false);
-canvasEl.addEventListener('touchend', onTouchEnd, false);
-
-
-
-let renderer, scene, camera, physicsWorld, rayLine;
-
-let diceIdArray = [];
-const activeConstraints = [];
 
 
 const params = {
@@ -54,28 +29,41 @@ const colorPal = [
     "#999"
 ];
 
-const floorWidth = 15;
-const floorHeight = 9;
-const floorDistance = -7;
+
+
+const canvasEl = document.querySelector('#canvas');
+const scoreResult = document.querySelector('#score-result');
+const rollBtn = document.querySelector('#roll-btn');
+const nDiceBtn = document.querySelector('#nDice');
+
+
+canvasEl.width = canvasWidth;
+canvasEl.height = canvasHeight;
+
+canvasEl.addEventListener('mousedown', onMouseDown, false);
+canvasEl.addEventListener('mousemove', onMouseMove, false);
+canvasEl.addEventListener('mouseup', onMouseUp, false);
+canvasEl.addEventListener('touchstart', onTouchStart, false);
+canvasEl.addEventListener('touchmove', onTouchMove, false);
+canvasEl.addEventListener('touchend', onTouchEnd, false);
+
+
+let renderer, scene, camera, physicsWorld;
+
+const diceArray = [];
+let diceIdArray = [];
+const activeConstraints = [];
+let target;
 
 const containerWidth = 20;
 const containerHeight = 6;
 const containerDepth = 12;
 
-const wallHeight = 1000;
-const wallThickness = 0.00001;
-
-// const diceScale = 1;
-const diceArray = [];
-
-// camera
-const fov = 9;
 
 
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 let draggedDice = null;
-let dragOffset = new THREE.Vector3();
 
 
 const overlay = d3.select(".content").append("canvas").attr("id", "overlay")
@@ -167,27 +155,27 @@ function initPhysics() {
 function resetWorld(numberOfDice) {
     // Remove existing dice from the scene and physics world
     diceArray.forEach(dice => {
-      scene.remove(dice.mesh);
-      physicsWorld.removeBody(dice.body);
+        scene.remove(dice.mesh);
+        physicsWorld.removeBody(dice.body);
     });
-  
+
     // Clear the arrays
     diceArray.length = 0;
     diceIdArray.length = 0;
-  
+
     // Initialize new dice
     const diceMesh = createDiceMesh();
     for (let i = 0; i < numberOfDice; i++) {
-      const color = colorPal[i % colorPal.length];
-      let die = createDice(diceMesh, color);
-      diceArray.push(die);
-      let children = die.mesh.children;
-      let childrenIds = [];
-      children.forEach((c) => childrenIds.push(c.uuid));
-      diceIdArray.push(childrenIds);
-      addDiceEvents(die);
+        const color = colorPal[i % colorPal.length];
+        let die = createDice(diceMesh, color);
+        diceArray.push(die);
+        let children = die.mesh.children;
+        let childrenIds = [];
+        children.forEach((c) => childrenIds.push(c.uuid));
+        diceIdArray.push(childrenIds);
+        addDiceEvents(die);
     }
-  }
+}
 
 function createFloor() {
     const floor = new THREE.Mesh(
@@ -213,93 +201,48 @@ function createFloor() {
 function createContainer(width, height, depth) {
     const halfExtents = new CANNON.Vec3(width / 2, height / 2, depth / 2);
     const wallMaterial = new THREE.MeshBasicMaterial({ color: "#000000", wireframe: false, opacity: 0, transparent: true });
-  
+
     const orientations = [
-      new CANNON.Vec3(1, 0, 0),
-      new CANNON.Vec3(-1, 0, 0),
-      new CANNON.Vec3(0, 1, 0),
-      new CANNON.Vec3(0, -1, 0),
-      new CANNON.Vec3(0, 0, 1),
-      new CANNON.Vec3(0, 0, -1),
+        new CANNON.Vec3(1, 0, 0),
+        new CANNON.Vec3(-1, 0, 0),
+        new CANNON.Vec3(0, 1, 0),
+        new CANNON.Vec3(0, -1, 0),
+        new CANNON.Vec3(0, 0, 1),
+        new CANNON.Vec3(0, 0, -1),
     ];
-  
+
     const positions = [
-      new CANNON.Vec3(halfExtents.x, 0, 0),
-      new CANNON.Vec3(-halfExtents.x, 0, 0),
-      new CANNON.Vec3(0, halfExtents.y, 0),
-      new CANNON.Vec3(0, -halfExtents.y, 0),
-      new CANNON.Vec3(0, 0, halfExtents.z),
-      new CANNON.Vec3(0, 0, -halfExtents.z),
+        new CANNON.Vec3(halfExtents.x, 0, 0),
+        new CANNON.Vec3(-halfExtents.x, 0, 0),
+        new CANNON.Vec3(0, halfExtents.y, 0),
+        new CANNON.Vec3(0, -halfExtents.y, 0),
+        new CANNON.Vec3(0, 0, halfExtents.z),
+        new CANNON.Vec3(0, 0, -halfExtents.z),
     ];
-  
+
     const sizes = [
-      { x: containerDepth, y: containerHeight },
-      { x: containerDepth, y: containerHeight },
-      { x: containerWidth, y: containerDepth },
-      { x: containerWidth, y: containerDepth },
-      { x: containerWidth, y: containerHeight },
-      { x: containerWidth, y: containerHeight }
+        { x: containerDepth, y: containerHeight },
+        { x: containerDepth, y: containerHeight },
+        { x: containerWidth, y: containerDepth },
+        { x: containerWidth, y: containerDepth },
+        { x: containerWidth, y: containerHeight },
+        { x: containerWidth, y: containerHeight }
     ];
-  
+
     for (let i = 0; i < orientations.length; i++) {
-      const planeGeometry = new THREE.PlaneGeometry(sizes[i].x, sizes[i].y);
-      const wall = new THREE.Mesh(planeGeometry, wallMaterial);
-      wall.position.copy(positions[i]);
-      wall.lookAt(scene.position);
-      scene.add(wall);
-  
-      const plane = new CANNON.Plane();
-      const body = new CANNON.Body({ mass: 0 });
-      body.addShape(plane);
-      body.position.copy(wall.position);
-      body.quaternion.copy(wall.quaternion);
-      physicsWorld.addBody(body);
+        const planeGeometry = new THREE.PlaneGeometry(sizes[i].x, sizes[i].y);
+        const wall = new THREE.Mesh(planeGeometry, wallMaterial);
+        wall.position.copy(positions[i]);
+        wall.lookAt(scene.position);
+        scene.add(wall);
+
+        const plane = new CANNON.Plane();
+        const body = new CANNON.Body({ mass: 0 });
+        body.addShape(plane);
+        body.position.copy(wall.position);
+        body.quaternion.copy(wall.quaternion);
+        physicsWorld.addBody(body);
     }
-  }
-
-
-function createWall(width, height, depth, position, rotation) {
-
-    const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = new THREE.MeshBasicMaterial({
-        color: 0xCCCCCC,
-        // roughness: 0,
-        // friction: 0.1,
-        opacity: 0, // Set opacity to 0
-        transparent: true
-    });
-    const wall = new THREE.Mesh(geometry, material);
-
-    wall.position.copy(position);
-    wall.rotation.copy(rotation);
-    scene.add(wall);
-
-    // Create a corresponding static Cannon.js body for physics
-    const wallShape = new CANNON.Box(new CANNON.Vec3(width / 2, height / 2, depth / 2));
-    const wallBody = new CANNON.Body({ mass: 0 });
-    wallBody.addShape(wallShape);
-    wallBody.position.copy(wall.position);
-    wallBody.quaternion.copy(wall.quaternion);
-    physicsWorld.addBody(wallBody);
-
-    return wall;
-}
-
-function createWalls() {
-    const w = wallThickness;
-    const h = wallHeight;
-    const d = floorHeight;
-
-    const wallPositions = [
-        { w: w, h: h, d: d, position: new THREE.Vector3(-floorWidth / 2 - wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Left wall
-        { w: w, h: h, d: d, position: new THREE.Vector3(floorWidth / 2 + wallThickness / 2, floorDistance + wallHeight / 2, 0), rotation: new THREE.Euler(0, 0, 0) }, // Right wall
-        { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, -floorHeight / 2 - wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Bottom wall
-        { w: floorWidth, h: wallHeight, d: wallThickness, position: new THREE.Vector3(0, floorDistance + wallHeight / 2, floorHeight / 2 + wallThickness / 2), rotation: new THREE.Euler(0, 0, 0) }, // Top wall
-    ];
-
-    wallPositions.forEach(wall => {
-        createWall(wall.w, wall.h, wall.d, wall.position, wall.rotation);
-    });
 }
 
 
@@ -498,7 +441,6 @@ function showRollResults(score) {
     }
 }
 
-var target = new THREE.Vector3();
 
 function render() {
 
@@ -648,16 +590,8 @@ function onMouseDown(event) {
             );
         })
     }
-
-
-
-    // dragOffset.copy(intersect.point).sub(draggedDice.mesh.position);
-    // scene.add(draggedDice.mesh);
-    // }
 }
 
-var prevPos = new THREE.Vector3();
-// var target;
 var dragDirection;
 const prevPositions = [];
 const bufferSize = 5;
