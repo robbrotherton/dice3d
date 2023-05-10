@@ -410,14 +410,12 @@ function addDiceEvents(dice) {
             showRollResults(result);
             res.push(result);
             addToCounts(rollCounts, result);
-            console.log(rollCounts);
             dice.isStatic = true;
 
             if (res.length === params.numberOfDice) {
                 let sum = res.reduce((sum, dice) => sum + dice, 0);
                 scoreResult.innerHTML += ('=' + sum);
                 addToCounts(sumCounts, sum);
-                console.log(sumCounts);
                 res.length = 0;
             }
 
