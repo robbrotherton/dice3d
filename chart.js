@@ -37,3 +37,9 @@ export function updateSumsHistogram(svg, data, params) {
         .attr("width", barWidth)
         .attr("height", d => Math.min(d.count * 10, d.count / maxCount * 200));
 }
+
+export function resetChart(svg, data) {
+    d3.select("#throw-counter").text('');
+    data.length = 0;
+    svg.selectAll("rect").remove();
+}

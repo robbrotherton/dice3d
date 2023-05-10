@@ -5,7 +5,7 @@
 import * as CANNON from 'https://cdn.skypack.dev/cannon-es';
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { createSumsHistogram, updateSumsHistogram } from '/chart.js';
+import { createSumsHistogram, updateSumsHistogram, resetChart } from '/chart.js';
 
 const canvasWidth = 500;
 const canvasHeight = 300;
@@ -37,6 +37,7 @@ const rollBtn = document.querySelector('#roll-btn');
 const nDiceBtn = document.querySelector('#nDice');
 const add100Btn = document.querySelector('#add-100');
 const add1000Btn = document.querySelector('#add-1000');
+const resetChartBtn = document.querySelector('#reset-chart');
 
 canvasEl.width = canvasWidth;
 canvasEl.height = canvasHeight;
@@ -99,10 +100,14 @@ window.addEventListener('dblclick', throwDice);
 rollBtn.addEventListener('click', throwDice);
 add100Btn.addEventListener('click', () => addNRolls(100));
 add1000Btn.addEventListener('click', () => addNRolls(1000));
+resetChartBtn.addEventListener("click", () => resetChart(svg, sumCounts));
 
 nDiceBtn.addEventListener('change', () => {
-    params.numberOfDice = parseInt(nDiceBtn.value);
-    console.log(params.numberOfDice);
+    let n = parseInt(nDiceBtn.value);
+    let scale = 2 - n/15;
+    params.numberOfDice = n;
+    params.diceScale = scale;
+    resetChart(svg, sumCounts);
     resetWorld(parseInt(nDiceBtn.value));
     throwDice();
 });
