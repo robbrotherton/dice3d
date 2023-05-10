@@ -139,6 +139,7 @@ function initScene(numberOfDice) {
         diceIdArray.push(childrenIds);
         addDiceEvents(die);
     }
+
     throwDice();
 
     render();
@@ -291,8 +292,7 @@ function createDice(diceMesh, innerColor) {
     });
     physicsWorld.addBody(body);
 
-    return { mesh, body };
-
+    return { mesh, body, isStatic: false };
 }
 
 function createBoxGeometry() {
@@ -394,43 +394,64 @@ function createInnerGeometry() {
     ], false);
 }
 
+const res = [];
+
 function addDiceEvents(dice) {
     dice.body.addEventListener('sleep', (e) => {
-
         dice.body.allowSleep = false;
-
         const euler = new CANNON.Vec3();
         e.target.quaternion.toEuler(euler);
 
-        const eps = .1;
-        let isZero = (angle) => Math.abs(angle) < eps;
-        let isHalfPi = (angle) => Math.abs(angle - .5 * Math.PI) < eps;
-        let isMinusHalfPi = (angle) => Math.abs(.5 * Math.PI + angle) < eps;
-        let isPiOrMinusPi = (angle) => (Math.abs(Math.PI - angle) < eps || Math.abs(Math.PI + angle) < eps);
+        let result = whichFaceIsUp(euler, dice);
 
+        if (result) {
+            showRollResults(result);
+            res.push(result);
+            dice.isStatic = true;
 
-        if (isZero(euler.z)) {
-            if (isZero(euler.x)) {
-                showRollResults(1);
-            } else if (isHalfPi(euler.x)) {
-                showRollResults(4);
-            } else if (isMinusHalfPi(euler.x)) {
-                showRollResults(3);
-            } else if (isPiOrMinusPi(euler.x)) {
-                showRollResults(6);
-            } else {
-                // landed on edge => wait to fall on side and fire the event again
-                dice.body.allowSleep = true;
+            if (res.length === params.numberOfDice) {
+                console.log("all " + params.numberOfDice + " landed!");
+                res.length = 0;
             }
-        } else if (isHalfPi(euler.z)) {
-            showRollResults(2);
-        } else if (isMinusHalfPi(euler.z)) {
-            showRollResults(5);
+
         } else {
-            // landed on edge => wait to fall on side and fire the event again
             dice.body.allowSleep = true;
         }
     });
+}
+
+function whichFaceIsUp(euler) {
+
+    const eps = .3;
+    let isZero = (angle) => Math.abs(angle) < eps;
+    let isHalfPi = (angle) => Math.abs(angle - .5 * Math.PI) < eps;
+    let isMinusHalfPi = (angle) => Math.abs(.5 * Math.PI + angle) < eps;
+    let isPiOrMinusPi = (angle) => (Math.abs(Math.PI - angle) < eps || Math.abs(Math.PI + angle) < eps);
+
+
+    if (isZero(euler.z)) {
+        if (isZero(euler.x)) {
+            return 1;
+        } else if (isHalfPi(euler.x)) {
+            return 4;
+        } else if (isMinusHalfPi(euler.x)) {
+            return 3;
+        } else if (isPiOrMinusPi(euler.x)) {
+            return 6;
+        } else {
+            // landed on edge => wait to fall on side and fire the event again
+            // dice.body.allowSleep = true;
+            return false;
+        }
+    } else if (isHalfPi(euler.z)) {
+        return 2;
+    } else if (isMinusHalfPi(euler.z)) {
+        return 5;
+    } else {
+        // landed on edge => wait to fall on side and fire the event again
+        // dice.body.allowSleep = true;
+        return false;
+    }
 }
 
 function showRollResults(score) {
@@ -477,10 +498,13 @@ function throwDice() {
 
     diceArray.forEach((d, dIdx) => {
 
+        d.isStatic = false;
+
         d.body.velocity.setZero();
         d.body.angularVelocity.setZero();
 
-        d.body.position = new CANNON.Vec3(containerWidth * 0.4, 0, -(params.numberOfDice * 0.5) + (dIdx * 1));
+        // d.body.position = new CANNON.Vec3(containerWidth * 0.4, 0, -(params.numberOfDice * 0.5) + (dIdx * 1));
+        d.body.position = new CANNON.Vec3(containerWidth / 4 * (0.5 - Math.random()), 2, containerDepth / 4 * (0.5 - Math.random()));
         d.mesh.position.copy(d.body.position);
 
         d.mesh.rotation.set(2 * Math.PI * Math.random(), 0, 2 * Math.PI * Math.random())
@@ -488,7 +512,7 @@ function throwDice() {
 
         const force = 10 + 10 * Math.random();
         d.body.applyImpulse(
-            new CANNON.Vec3(-force * 4, force * 0.5, 0),
+            new CANNON.Vec3(-force * 0.1, force * 4, force),
             new CANNON.Vec3(0, 0, 0.2)
         );
 
@@ -501,9 +525,9 @@ function attractNeighbors() {
         return;
     }
 
-    const constraintDistance = params.diceScale * 2;
-    const attractionForce = 50; // Adjust this value to control the attraction force
-    const maxDistance = 100; // Adjust this value to control the pick-up distance
+    const constraintDistance = params.diceScale * 1.5;
+    const attractionForce = 200; // Adjust this value to control the attraction force
+    const maxDistance = 1000; // Adjust this value to control the pick-up distance
 
     diceArray.forEach((otherDice, index) => {
         if (otherDice !== draggedDice) {
@@ -511,7 +535,7 @@ function attractNeighbors() {
             if (distance <= maxDistance) {
                 const forceDirection = draggedDice.mesh.position.clone().sub(otherDice.mesh.position).normalize();
                 const force = new CANNON.Vec3(forceDirection.x * attractionForce, forceDirection.y * attractionForce, forceDirection.z * attractionForce);
-                otherDice.body.applyForce(force, otherDice.body.position);
+                otherDice.body.applyForce(force, draggedDice.body.position);
 
                 // Create constraints between the dice when they are close enough
                 if (distance <= constraintDistance) {
@@ -573,6 +597,7 @@ function onMouseDown(event) {
             }
         }
         draggedDice.body.allowSleep = false;
+        draggedDice.body.collisionFilterMask = 1;
     } else {
         // if no dice was clicked, bump the table a bit
         var forceX = 2 + Math.random() * 2;
@@ -581,13 +606,16 @@ function onMouseDown(event) {
         const dirY = 1 - Math.random() * 2;
         // force = force * dir;
         // console.log(dir);
+        const force = 10;
 
         diceArray.forEach((d) => {
-            const force = 3;
-            d.body.applyImpulse(
-                new CANNON.Vec3(force, force, force * 2),
-                new CANNON.Vec3(0, 0, 0)
-            );
+            if (!d.isStatic) {
+                d.body.applyImpulse(
+                    new CANNON.Vec3(0, force, 0),
+                    new CANNON.Vec3(0, 0, 0)
+                );
+            }
+
         })
     }
 }
@@ -640,7 +668,7 @@ function onMouseUp(event) {
         });
         activeConstraints.length = 0;
 
-        const forceMagnitude = 60;
+        const forceMagnitude = 100;
         const force = new CANNON.Vec3(dragDirection.x * forceMagnitude, 10, dragDirection.z * forceMagnitude);
 
         diceArray.forEach((d) => {
