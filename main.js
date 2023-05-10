@@ -395,9 +395,8 @@ function createInnerGeometry() {
 }
 
 const res = [];
-const diceRollHistory = [];
-const diceSumHistory = [];
-const diceSums = [];
+const rollCounts = [];
+const sumCounts = [];
 
 function addDiceEvents(dice) {
     dice.body.addEventListener('sleep', (e) => {
@@ -410,21 +409,15 @@ function addDiceEvents(dice) {
         if (result) {
             showRollResults(result);
             res.push(result);
-            diceRollHistory.push(result)
+            addToCounts(rollCounts, result);
+            console.log(rollCounts);
             dice.isStatic = true;
 
             if (res.length === params.numberOfDice) {
                 let sum = res.reduce((sum, dice) => sum + dice, 0);
                 scoreResult.innerHTML += ('=' + sum);
-                diceSumHistory.push(sum);
-
-                let arrayEntry = diceSums.find(s => s.value == sum);
-                if (arrayEntry === undefined) {
-                    diceSums.push({value: sum, count: 1});
-                } else {
-                    arrayEntry.count++;
-                }
-                console.log(diceSums);
+                addToCounts(sumCounts, sum);
+                console.log(sumCounts);
                 res.length = 0;
             }
 
@@ -432,6 +425,15 @@ function addDiceEvents(dice) {
             dice.body.allowSleep = true;
         }
     });
+}
+
+function addToCounts(array, value) {
+    let arrayEntry = array.find(s => s.value == value);
+    if (arrayEntry === undefined) {
+        array.push({value: value, count: 1});
+    } else {
+        arrayEntry.count++;
+    }
 }
 
 function whichFaceIsUp(euler) {
