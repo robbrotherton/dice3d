@@ -13,6 +13,13 @@ export function createSumsHistogram(width, height) {
 export function updateSumsHistogram(svg, data, params) {
 
     const maxSum = params.numberOfDice * 6;
+    const counts = data.map(d => d.count);
+    const maxCount = counts.reduce((a, b) => Math.max(a, b), -Infinity);
+    
+    // const totalRolls = counts.reduce((accumulator, value) => {
+    //     return accumulator + value;
+    //   }, 0);
+    
     const svgWidth = svg.attr("width");
     const barWidth = svgWidth / maxSum;
 
@@ -27,5 +34,5 @@ export function updateSumsHistogram(svg, data, params) {
         .attr("fill", "#D77")
         .attr("x", d => x(d.value))
         .attr("width", barWidth)
-        .attr("height", d => d.count * 10)
+        .attr("height", d => Math.min(d.count * 10, d.count / maxCount * 200));
 }

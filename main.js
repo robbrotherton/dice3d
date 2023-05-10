@@ -35,7 +35,8 @@ const canvasEl = document.querySelector('#canvas');
 const scoreResult = document.querySelector('#score-result');
 const rollBtn = document.querySelector('#roll-btn');
 const nDiceBtn = document.querySelector('#nDice');
-const addNBtn = document.querySelector('#add-n');
+const add100Btn = document.querySelector('#add-100');
+const add1000Btn = document.querySelector('#add-1000');
 
 canvasEl.width = canvasWidth;
 canvasEl.height = canvasHeight;
@@ -96,7 +97,8 @@ const svg = createSumsHistogram(canvasWidth, 200);
 window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', throwDice);
 rollBtn.addEventListener('click', throwDice);
-addNBtn.addEventListener('click', () => addNRolls(10));
+add100Btn.addEventListener('click', () => addNRolls(100));
+add1000Btn.addEventListener('click', () => addNRolls(1000));
 
 nDiceBtn.addEventListener('change', () => {
     params.numberOfDice = parseInt(nDiceBtn.value);
