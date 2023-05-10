@@ -24,6 +24,7 @@ export function updateSumsHistogram(svg, data, params) {
 
     svg.selectAll("rect").data(data).enter()
         .append("rect")
+        .attr("fill", "#D77")
         .attr("x", d => x(d.value))
         .attr("width", barWidth)
         .attr("height", d => d.count * 10)
