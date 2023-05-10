@@ -5,7 +5,7 @@
 import * as CANNON from 'https://cdn.skypack.dev/cannon-es';
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-
+import { createSumsHistogram } from '/chart.js';
 
 const canvasWidth = 500;
 const canvasHeight = 300;
@@ -85,6 +85,13 @@ overlay
 
 initPhysics();
 initScene(params.numberOfDice);
+
+const svg = createSumsHistogram(canvasWidth, 100);
+svg.append("circle")
+    .attr("cx", 10)
+    .attr("cy", 10)
+    .attr("r", 10)
+    .attr("fill", "black")
 
 window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', throwDice);

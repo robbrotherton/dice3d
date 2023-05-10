@@ -11,16 +11,10 @@
 <body>
 
 	<div>
-		<div class="content" style="width: 500px; height: 300px; position: relative;">
-			<canvas id="canvas" style="position: absolute;"></canvas>
-			<!-- border: 2px solid #D77; border-radius: 5px;  -->
-		</div>
-
 		<div class="ui-controls">
-			<div class="score">Score: <span id="score-result"></span></div>
 			<button id="roll-btn">Throw the dice</button>
 			<label for="cars">Number of dice:</label>
-
+			
 			<select name="nDice" id="nDice">
 				<option value="1">1</option>
 				<option value="2" selected="true">2</option>
@@ -29,6 +23,14 @@
 				<option value="5">5</option>
 			</select>
 		</div>
+		
+		<div class="content" style="width: 500px; height: 300px; position: relative;">
+			<canvas id="canvas" style="position: absolute;"></canvas>
+			<!-- border: 2px solid #D77; border-radius: 5px;  -->
+			<div class="score" style="position: absolute; width: 100%; bottom: 4%; text-align: center;"><span id="score-result"></span></div>
+		</div>
+
+		<div id="chart-container"></div>
 	</div>
 
 	<script type="importmap">
@@ -40,6 +42,7 @@
 		  }
 		</script>
 	<script type="module" src="main.js"></script>
+	<script type="module" src="chart.js"></script>
 </body>
 
 </html>
