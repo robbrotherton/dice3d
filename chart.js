@@ -9,8 +9,12 @@ export function createSumsHistogram(width, height) {
         return svg;
 }
 
-export function updateSumsHistogram(svgGroup, data) {
-    svgGroup.selectAll("rect").data(data).enter()
-        .attr("x", d => d.value)
-        .attr("height", d => d.count)
+export function updateSumsHistogram(svg, data) {
+    console.log(data);
+    svg.selectAll("rect").remove();
+    svg.selectAll("rect").data(data).enter()
+        .append("rect")
+        .attr("x", d => d.value * 10)
+        .attr("width", 10)
+        .attr("height", d => d.count * 10)
 }
