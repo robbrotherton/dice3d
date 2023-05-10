@@ -603,8 +603,6 @@ function onMouseDown(event) {
                 for (let k = 0; k < childIds.length; k++) {
                     if (id === childIds[k]) {
                         draggedDice = diceArray[j];
-                        // clickedDiceIndex = j;
-                        console.log(j);
                         break;
                     }
                 }
@@ -614,12 +612,6 @@ function onMouseDown(event) {
         draggedDice.body.collisionFilterMask = 1;
     } else {
         // if no dice was clicked, bump the table a bit
-        var forceX = 2 + Math.random() * 2;
-        var forceY = 2 + Math.random() * 2;
-        const dirX = 1 - Math.random() * 2;
-        const dirY = 1 - Math.random() * 2;
-        // force = force * dir;
-        // console.log(dir);
         const force = 10;
 
         diceArray.forEach((d) => {
@@ -672,9 +664,10 @@ function onMouseMove(event) {
 
 function onMouseUp(event) {
     event.preventDefault();
-    console.log('rollin');
-
+    
     if (draggedDice !== null) {
+
+        scoreResult.innerHTML = '';
 
         // Remove the constraints
         activeConstraints.forEach(constraint => {
@@ -688,7 +681,7 @@ function onMouseUp(event) {
         diceArray.forEach((d) => {
             d.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
             d.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
-
+            d.body.allowSleep = true;
         });
 
         draggedDice.body.allowSleep = true;
