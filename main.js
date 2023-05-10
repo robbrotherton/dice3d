@@ -395,6 +395,9 @@ function createInnerGeometry() {
 }
 
 const res = [];
+const diceRollHistory = [];
+const diceSumHistory = [];
+const diceSums = [];
 
 function addDiceEvents(dice) {
     dice.body.addEventListener('sleep', (e) => {
@@ -407,10 +410,21 @@ function addDiceEvents(dice) {
         if (result) {
             showRollResults(result);
             res.push(result);
+            diceRollHistory.push(result)
             dice.isStatic = true;
 
             if (res.length === params.numberOfDice) {
-                console.log("all " + params.numberOfDice + " landed!");
+                let sum = res.reduce((sum, dice) => sum + dice, 0);
+                scoreResult.innerHTML += ('=' + sum);
+                diceSumHistory.push(sum);
+
+                let arrayEntry = diceSums.find(s => s.value == sum);
+                if (arrayEntry === undefined) {
+                    diceSums.push({value: sum, count: 1});
+                } else {
+                    arrayEntry.count++;
+                }
+                console.log(diceSums);
                 res.length = 0;
             }
 
