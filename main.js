@@ -52,12 +52,15 @@ let renderer, scene, camera, physicsWorld;
 
 const diceArray = [];
 let diceIdArray = [];
+const res = [];
+const rollCounts = [];
+const sumCounts = [];
 const activeConstraints = [];
 let target;
 
-const containerWidth = 20;
+const containerWidth = 18;
 const containerHeight = 6;
-const containerDepth = 12;
+const containerDepth = 11;
 
 
 
@@ -394,9 +397,6 @@ function createInnerGeometry() {
     ], false);
 }
 
-const res = [];
-const rollCounts = [];
-const sumCounts = [];
 
 function addDiceEvents(dice) {
     dice.body.addEventListener('sleep', (e) => {
@@ -509,6 +509,7 @@ function updateSceneSize() {
 
 function throwDice() {
     scoreResult.innerHTML = '';
+    res.length = 0;
 
     diceArray.forEach((d, dIdx) => {
 
@@ -668,6 +669,7 @@ function onMouseUp(event) {
     if (draggedDice !== null) {
 
         scoreResult.innerHTML = '';
+        res.length = 0;
 
         // Remove the constraints
         activeConstraints.forEach(constraint => {
@@ -682,6 +684,7 @@ function onMouseUp(event) {
             d.body.applyImpulse(force, new CANNON.Vec3(0, 0, 0));
             d.body.angularVelocity.set(Math.random() * 20, Math.random() * 20, Math.random() * 20);
             d.body.allowSleep = true;
+            d.isStatic = false;
         });
 
         draggedDice.body.allowSleep = true;
