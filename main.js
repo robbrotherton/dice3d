@@ -424,7 +424,7 @@ function addDiceEvents(dice) {
                 scoreResult.innerHTML += ('=' + sum);
                 addToCounts(sumCounts, sum);
                 res.length = 0;
-                updateSumsHistogram(svg, sumCounts);
+                updateSumsHistogram(svg, sumCounts, params);
             }
 
         } else {
