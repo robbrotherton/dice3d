@@ -35,7 +35,7 @@ const canvasEl = document.querySelector('#canvas');
 const scoreResult = document.querySelector('#score-result');
 const rollBtn = document.querySelector('#roll-btn');
 const nDiceBtn = document.querySelector('#nDice');
-
+const addNBtn = document.querySelector('#add-n');
 
 canvasEl.width = canvasWidth;
 canvasEl.height = canvasHeight;
@@ -69,24 +69,24 @@ let mouse = new THREE.Vector2();
 let draggedDice = null;
 
 
-const overlay = d3.select(".content").append("canvas").attr("id", "overlay")
+const overlay = d3.select(".content").append("div").attr("id", "overlay")
 
 overlay
-    // .style("background-color", "plum")
-    .style("border", "2px solid #D77")
-    .style("border-radius", "5px")
-    .style("position", "absolute")
-    .style("left", (canvasWidth * 0.05) + "px")
-    .style("top", (canvasHeight * 0.05) + "px")
-    .attr("width", canvasWidth * 0.9)
-    .attr("height", canvasHeight * 0.9)
+.style("border", "2px solid #D77")
+.style("border-radius", "5px")
+.style("position", "absolute")
+.style("left", "5%")
+.style("top", "5%")
+.style("width", "90%")
+.style("height", "90%")
+// .style("margin", "auto")
     .style("z-index", -1)
 
 
 initPhysics();
 initScene(params.numberOfDice);
 
-const svg = createSumsHistogram(canvasWidth, 100);
+const svg = createSumsHistogram(canvasWidth, 200);
 // svg.append("circle")
 //     .attr("cx", 10)
 //     .attr("cy", 10)
@@ -96,6 +96,8 @@ const svg = createSumsHistogram(canvasWidth, 100);
 window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', throwDice);
 rollBtn.addEventListener('click', throwDice);
+addNBtn.addEventListener('click', () => addNRolls(10));
+
 nDiceBtn.addEventListener('change', () => {
     params.numberOfDice = parseInt(nDiceBtn.value);
     console.log(params.numberOfDice);
@@ -440,6 +442,21 @@ function addToCounts(array, value) {
     } else {
         arrayEntry.count++;
     }
+}
+
+function addNRolls(n) {
+    console.log("adding " + n)
+    for (let i = 0; i < n; i++) {
+        let theseRolls = [];
+        for (let d = 0; d < params.numberOfDice; d++) {
+            let thisDiceResult = 1 + Math.floor(Math.random() * 6)
+            theseRolls.push(thisDiceResult);
+        }
+        let thisSum = theseRolls.reduce((sum, dice) => sum + dice, 0);
+        addToCounts(sumCounts, thisSum);
+    }
+    updateSumsHistogram(svg, sumCounts, params);
+
 }
 
 function whichFaceIsUp(euler) {

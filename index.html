@@ -10,9 +10,10 @@
 
 <body>
 
-	<div>
+	<div style="text-align: center;">
 		<div class="ui-controls">
 			<button id="roll-btn">Throw the dice</button>
+			<button id="add-n">+100</button>
 			<label for="cars">Number of dice:</label>
 			
 			<select name="nDice" id="nDice">
@@ -24,13 +25,13 @@
 			</select>
 		</div>
 		
-		<div class="content" style="width: 500px; height: 300px; position: relative;">
-			<canvas id="canvas" style="position: absolute;"></canvas>
+		<div class="content" style="width: 500px; height: 300px; position: relative; margin: 0;">
+			<canvas id="canvas" ></canvas>
 			<!-- border: 2px solid #D77; border-radius: 5px;  -->
 			<div class="score" style="position: absolute; width: 100%; bottom: 4%; text-align: center;"><span id="score-result"></span></div>
 		</div>
 
-		<div id="chart-container" style="text-align: center;"></div>
+		<div id="chart-container"></div>
 	</div>
 
 	<script type="importmap">
