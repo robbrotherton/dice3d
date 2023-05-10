@@ -16,7 +16,7 @@
 			<button id="add-100">+100</button>
 			<button id="add-1000">+1,000</button>
 			<label for="cars">Number of dice:</label>
-			
+
 			<select name="nDice" id="nDice">
 				<option value="1">1</option>
 				<option value="2" selected="true">2</option>
@@ -25,14 +25,20 @@
 				<option value="5">5</option>
 			</select>
 		</div>
-		
+
 		<div class="content" style="width: 500px; height: 300px; position: relative; margin: 0;">
-			<canvas id="canvas" ></canvas>
+			<canvas id="canvas"></canvas>
 			<!-- border: 2px solid #D77; border-radius: 5px;  -->
-			<div class="score" style="position: absolute; width: 100%; bottom: 4%; text-align: center;"><span id="score-result"></span></div>
+			<div class="score" style="position: absolute; width: 100%; bottom: 4%; text-align: center;"><span
+					id="score-result"></span></div>
 		</div>
 
 		<div id="chart-container"></div>
+		<div class="throws" style="width: 100%; text-align: left;">
+			<span>Throws: <span id="throw-counter"></span></span>
+			<button id="reset-rolls" style="float: right;">Reset</button>
+		</div>
+		
 	</div>
 
 	<script type="importmap">

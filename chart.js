@@ -16,10 +16,11 @@ export function updateSumsHistogram(svg, data, params) {
     const counts = data.map(d => d.count);
     const maxCount = counts.reduce((a, b) => Math.max(a, b), -Infinity);
     
-    // const totalRolls = counts.reduce((accumulator, value) => {
-    //     return accumulator + value;
-    //   }, 0);
+    const totalRolls = counts.reduce((accumulator, value) => {
+        return accumulator + value;
+      }, 0);
     
+    d3.select("#throw-counter").text(totalRolls);
     const svgWidth = svg.attr("width");
     const barWidth = svgWidth / maxSum;
 
